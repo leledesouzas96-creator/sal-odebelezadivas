@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#64258F">
+    <meta name="description" content="DIVAS — salão de beleza em Cachoeirinha/RS. Especialistas em cabelos, unhas, sobrancelhas e estética. Agende seu horário online pelo WhatsApp.">
+    <meta name="keywords" content="salão de beleza, Cachoeirinha, DIVAS, manicure, pedicure, cabelo, estética, maquiagem, sobrancelhas, agendamento online">
+    <title>DIVAS | Salão de Beleza | Cachoeirinha - RS</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lilac: #B99AE8;
+            --deep: #64258F;
+            --ink: #292333;
+            --muted: #746d7d;
+            --pale: #F7F1FC;
+            --white: #fff;
+            --line: #E8DDF2;
+            --gold: #D4AF37;
+            --gold-light: #F7EBC5;
+            --shadow: 0 18px 55px rgba(77,35,111,.15);
+            --font-heading: "Playfair Display", serif;
+            --font-body: "DM Sans", sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--white); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; overflow-x: hidden; }
+        a { color: inherit; text-decoration: none; transition: color .3s ease; }
+        ul { list-style: none; }
+        button, input, select, textarea { font: inherit; }
+        
+        .container { width: min(1200px, 92%); margin: auto; }
+        .section { padding: 80px 0; }
+        .section-head { text-align: center; max-width: 680px; margin: 0 auto 60px; }
+        .kicker { color: var(--deep); font-size: 12px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 8px; }
+        .section-title { font: 600 clamp(36px, 4vw, 52px)/1.15 var(--font-heading); color: var(--ink); margin-bottom: 15px; }
+        .section-lead { color: var(--muted); font-size: 18px; line-height: 1.8; }
+
+        .btn, .nav-cta {
+            border: 0; border-radius: 999px; padding: 14px 28px;
+            background: linear-gradient(135deg, var(--lilac) 0%, var(--deep) 78%);
+            color: var(--white); font-weight: 700; font-size: 14px; letter-spacing: 0.5px;
+            box-shadow: 0 10px 24px rgba(100,37,143,.24);
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .btn:hover, .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(100,37,143,.28); }
+        .btn-light { background: var(--pale); color: var(--deep); box-shadow: none; }
+        .btn-light:hover { background: #f1e6fa; }
+
+        header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(234,223,243,.6); }
+        .nav { height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+        
+        .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 28px; letter-spacing: 1.5px; color: var(--deep); font-weight: 700; }
+        .brand img { width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); padding: 2px; }
+        .brand small { display: block; font: 600 10px var(--font-body); letter-spacing: 3px; text-align: left; color: #9270AD; margin-top: -2px; }
+
+        .navlinks { display: flex; align-items: center; gap: 28px; font-size: 13px; font-weight: 600; color: #51495a; }
+        .navlinks a { padding: 5px 0; }
+        .navlinks a:hover { color: var(--deep); }
+        
+        .menu { display: none; border: 0; background: var(--pale); border-radius: 12px; padding: 10px; color: var(--deep); font-size: 24px; cursor: pointer; }
+
+        .hero { padding: 0; background: linear-gradient(180deg, #fff, #fbf8fe); }
+        .slider { position: relative; min-height: 600px; overflow: hidden; background: var(--deep); color: var(--white); }
+        
+        .slide { position: absolute; inset: 0; z-index: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .8s ease, visibility .8s ease; display: flex; align-items: center; background-size: cover; background-position: center; }
+        .slide.active { z-index: 1; opacity: 1; visibility: visible; pointer-events: auto; }
+        .slide:before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(34,22,46,.88), rgba(42,27,55,.6) 58%, rgba(42,27,55,.05)); }
+        
+        .slide-content { position: relative; z-index: 1; max-width: 640px; padding: 80px 5%; }
+        .slide .eyebrow { color: var(--gold-light); margin-bottom: 15px; }
+        .slide h1 { font-size: clamp(48px, 6vw, 72px); line-height: 1.1; margin-bottom: 25px; }
+        .slide p { font-size: 18px; color: #f7efff; margin-bottom: 35px; line-height: 1.8; max-width: 540px; }
+
+        .dots { position: absolute; z-index: 5; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+        .dot { width: 10px; height: 10px; border: 0; border-radius: 50%; background: rgba(255,255,255,.4); padding: 0; cursor: pointer; transition: .3s; }
+        .dot.active { width: 30px; border-radius: 999px; background: var(--gold); }
+
+        .status-bar { background: var(--gold-light); color: #59451d; padding: 10px 0; text-align: center; font-size: 14px; font-weight: 600; }
+        .status-open { color: #257541; }
+        .status-closed { color: #9e2828; }
+
+        .intro { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; padding: 120px 0; }
+        .photo-stack { position: relative; min-height: 450px; }
+        .photo-stack img { position: absolute; object-fit: cover; border-radius: 24px; box-shadow: var(--shadow); }
+        .photo-main { width: 75%; height: 400px; left: 0; top: 0; }
+        .photo-small { width: 50%; height: 240px; right: 0; bottom: 0; border: 10px solid var(--white); }
+
+        .services { background: var(--pale); }
+        .service-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+        .service-card { background: var(--white); border: 1px solid var(--line); border-radius: 24px; padding: 40px; transition: .3s; box-shadow: 0 10px 30px rgba(75,43,102,.03); display: flex; flex-direction: column; }
+        .service-card:hover { transform: translateY(-8px); box-shadow: var(--shadow); border-color: var(--gold); }
+        .service-icon { width: 56px; height: 56px; border-radius: 18px; background: var(--pale); color: var(--deep); display: grid; place-items: center; font-size: 26px; margin-bottom: 25px; }
+        .service-card h3 { font: 600 24px var(--font-heading); margin-bottom: 15px; color: var(--ink); }
+        .service-card ul { color: var(--muted); font-size: 15px; line-height: 1.9; margin-bottom: 25px; flex-grow: 1; }
+        .service-card li { margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .service-card li span:first-child { font-weight: 500; }
+        .service-card li span:last-child { color: var(--deep); font-weight: 600; }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; grid-auto-rows: 250px; }
+        .gallery-item { border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+        .gallery-item:hover img { transform: scale(1.05); }
+        .gallery-item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+        .gallery-item:nth-child(4) { grid-column: span 2; }
+
+        .testimonials { background: var(--pale); }
+        .testi-slider { position: relative; max-width: 800px; margin: 0 auto; padding-bottom: 50px; }
+        .testi-slide { text-align: center; opacity: 0; visibility: hidden; position: absolute; inset: 0; transition: .5s ease; }
+        .testi-slide.active { opacity: 1; visibility: visible; position: relative; }
+        .testi-quote { font: 400 28px/1.6 var(--font-heading); color: var(--deep); margin-bottom: 30px; }
+        .testi-stars { color: var(--gold); font-size: 20px; margin-bottom: 15px; }
+        .testi-name { font-weight: 700; color: var(--ink); font-size: 16px; }
+        .testi-role { color: var(--muted); font-size: 14px; }
+        .testi-dots { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; }
+
+        .booking { background: linear-gradient(135deg, var(--deep) 0%, #8554B1 58%, var(--lilac) 100%); color: var(--white); }
+        .booking-wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; }
+        .booking .section-title, .booking .kicker { color: var(--white); }
+        .booking .section-lead { color: #f4eafa; }
+        
+        .booking-form { background: var(--white); color: var(--ink); border-radius: 30px; padding: 50px; box-shadow: 0 25px 70px #3e205b55; display: grid; gap: 20px; }
+        .field { display: grid; gap: 8px; }
+        .field label { font-size: 13px; font-weight: 600; color: #655b70; }
+        .field input, .field select, .field textarea { width: 100%; border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #fff; color: var(--ink); outline: none; transition: .3s; }
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--lilac); box-shadow: 0 0 0 4px #a77bd11a; }
+        .booking-form .btn { width: 100%; padding: 18px; margin-top: 10px; }
+
+        .location { background: var(--white); }
+        .location-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px; align-items: center; }
+        .address-card { background: var(--pale); border: 1px solid var(--line); padding: 40px; border-radius: 24px; }
+        .address-card h3 { font: 600 24px var(--font-heading); margin-bottom: 25px; color: var(--deep); }
+        .address-card p { margin-bottom: 15px; color: var(--muted); display: flex; gap: 15px; align-items: flex-start; }
+        .address-card strong { color: var(--ink); display: block; margin-bottom: 5px; }
+        .map { width: 100%; height: 450px; border: 0; border-radius: 24px; box-shadow: var(--shadow); }
+
+        footer { background: var(--ink); color: #c9bbd4; padding: 80px 0 40px; font-size: 14px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 50px; margin-bottom: 60px; }
+        .footer-brand img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #c9bbd4; padding: 2px; margin-bottom: 15px;}
+        .footer-brand small { font-size: 11px; letter-spacing: 3px; color: #9b83ad; }
+        .footer-col h4 { color: var(--white); font-weight: 700; margin-bottom: 20px; font-size: 16px; }
+        .footer-col ul { display: grid; gap: 12px; }
+        .footer-links a:hover { color: var(--lilac); }
+        .social-links { display: flex; gap: 15px; font-size: 18px; }
+        .footer-bottom { text-align: center; border-top: 1px solid #413a4a; padding-top: 40px; color: #9b83ad; font-size: 12px; }
+
+        .float-whats { position: fixed; right: 30px; bottom: 30px; z-index: 30; width: 65px; height: 65px; border-radius: 50%; display: grid; place-items: center; background: #25d366; color: white; font-size: 32px; box-shadow: 0 10px 30px rgba(0,0,0,.25); transition: transform .3s ease, background .3s ease; }
+        .float-whats:hover { transform: scale(1.05) translateY(-3px); background: #1ebd59; }
+
+        @media(max-width: 1024px) {
+            .intro, .booking-wrap, .location-grid { grid-template-columns: 1fr; gap: 50px; }
+            .photo-stack { min-height: 380px; }
+            .photo-main { height: 330px; }
+            .photo-small { height: 200px; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 200px; }
+            .gallery-item:nth-child(4) { grid-column: auto; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media(max-width: 768px) {
+            .navlinks { display: none; position: absolute; top: 80px; left: 0; right: 0; background: var(--white); padding: 30px 5%; border-bottom: 1px solid var(--line); flex-direction: column; align-items: flex-start; gap: 20px; box-shadow: var(--shadow); }
+            .navlinks.open { display: flex; }
+            .nav-cta { display: none; }
+            .menu { display: block; }
+            .slider { min-height: 500px; }
+            .slide-content { padding: 60px 5%; }
+            .slide h1 { font-size: 48px; }
+            .booking-form { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar" id="statusBar">
+        <span id="statusText">Carregando...</span>
+    </div>
+
+    <header>
+        <div class="container">
+            <nav class="nav">
+                <a class="brand" href="#inicio">
+                    <img src="https://i.ibb.co/VNg3K1Q/logo-divas.jpg" alt="Logo Divas Salão de Beleza">
+                    <span>DIVAS<small>SALÃO DE BELEZA</small></span>
+                </a>
+                <button class="menu" id="menuBtn" aria-label="Abrir menu">☰</button>
+                <nav class="navlinks" id="navlinks">
+                    <a href="#inicio">Início</a>
+                    <a href="#sobre">O salão</a>
+                    <a href="#servicos">Serviços</a>
+                    <a href="#agendar">Agendamento</a>
+                    <a href="#local">Localização</a>
+                </nav>
+                <a class="nav-cta" href="#agendar">Agendar horário ↗</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="inicio">
+        <div class="slider" role="region" aria-label="Apresentação do salão DIVAS">
+            <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=1920&auto=format&fit=crop')">
+                <div class="container">
+                    <div class="slide-content">
+                        <span class="eyebrow">Beleza • Cuidado • Autoestima</span>
+                        <h1>Seu momento.<br>Sua beleza.</h1>
+                        <p>Um espaço exclusivo para cuidar de você, renovar o visual e realçar o que há de melhor em você.</p>
+                        <a href="#agendar" class="btn">Agendar via WhatsApp</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1521590832167-ce3fad626cb0?q=80&w=1920&auto=format&fit=crop')">
+                <div class="container">
+                    <div class="slide-content">
+                        <span class="eyebrow">Unhas perfeitas</span>
+                        <h1>Mãos e pés<br>que encantam.</h1>
+                        <p>Nossas profissionais cuidam de cada detalhe, desde a manicure clássica até as artes mais modernas.</p>
+                        <a href="#agendar" class="btn">Conhecer serviços</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1600948836101-ff9ffda047f4?q=80&w=1920&auto=format&fit=crop')">
+                <div class="container">
+                    <div class="slide-content">
+                        <span class="eyebrow">Olhar marcante</span>
+                        <h1>Sobrancelhas<br>e Cílios.</h1>
+                        <p>Técnicas especializadas para valorizar o seu olhar e harmonizar o seu rosto.</p>
+                        <a href="#agendar" class="btn">Agendar agora</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dots">
+                <button class="dot active" data-slide="0" aria-label="Ir para slide 1"></button>
+                <button class="dot" data-slide="1" aria-label="Ir para slide 2"></button>
+                <button class="dot" data-slide="2" aria-label="Ir para slide 3"></button>
+            </div>
+        </div>
+    </section>
+
+    <section class="section intro" id="sobre">
+        <div class="container">
+            <div class="photo-stack">
+                <img src="https://images.unsplash.com/photo-1633681926430-38f14be1a349?q=80&w=800&auto=format&fit=crop" alt="Interior do salão DIVAS" class="photo-main">
+                <img src="https://images.unsplash.com/photo-1595474481883-ea4e7d6da62c?q=80&w=600&auto=format&fit=crop" alt="Produtos de beleza" class="photo-small">
+            </div>
+            <div class="intro-copy">
+                <span class="kicker">SOBRE NÓS</span>
+                <h2 class="section-title">O seu refúgio de<br>beleza em Cachoeirinha.</h2>
+                <p class="section-lead">Fundado com o propósito de elevar a autoestima, o DIVAS Salão de Beleza é um espaço acolhedor onde cada cliente é tratada com exclusividade. Nossa equipe é constantemente treinada nas últimas tendências para oferecer o melhor serviço.</p>
+                <p style="color: var(--muted); margin-top: 20px;">Venha relaxar, tomar um café e sair se sentindo uma verdadeira diva.</p>
+                <a href="#servicos" class="btn btn-light" style="margin-top: 30px;">Conhecer nossos serviços </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section services" id="servicos">
+        <div class="container">
+            <div class="section-head">
+                <span class="kicker">CARDÁPIO</span>
+                <h2 class="section-title">Nossos Serviços</h2>
+                <p class="section-lead">Confira os tratamentos que oferecemos para cuidar da sua beleza da cabeça aos pés. Valores estimados.</p>
+            </div>
+            
+            <div class="service-grid">
+                <div class="service-card">
+                    <div class="service-icon">💇‍♀️</div>
+                    <h3>Cabelo</h3>
+                    <ul>
+                        <li><span>Corte Feminino</span> <span>R$ 80</span></li>
+                        <li><span>Escova Modelada</span> <span>R$ 65</span></li>
+                        <li><span>Hidratação Profunda</span> <span>R$ 120</span></li>
+                        <li><span>Luzes (Mechas)</span> <span>a partir de R$ 350</span></li>
+                        <li><span>Coloração</span> <span>R$ 180</span></li>
+                    </ul>
+                    <a href="#agendar" class="btn btn-light">Agendar</a>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">💅</div>
+                    <h3>Unhas</h3>
+                    <ul>
+                        <li><span>Manicure Completa</span> <span>R$ 50</span></li>
+                        <li><span>Pedicure Completa</span> <span>R$ 60</span></li>
+                        <li><span>Manicure + Pedicure</span> <span>R$ 100</span></li>
+                        <li><span>Unhas de Gel (Alongamento)</span> <span>R$ 250</span></li>
+                        <li><span>Esmaltação em Gel</span> <span>R$ 80</span></li>
+                    </ul>
+                    <a href="#agendar" class="btn btn-light">Agendar</a>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">👁️</div>
+                    <h3>Olhos e Face</h3>
+                    <ul>
+                        <li><span>Design de Sobrancelhas</span> <span>R$ 45</span></li>
+                        <li><span>Henna / Tintura</span> <span>R$ 30</span></li>
+                        <li><span>Lash Lifting</span> <span>R$ 160</span></li>
+                        <li><span>Extensão de Cílios Clássica</span> <span>R$ 190</span></li>
+                        <li><span>Buço (Linha/Cera)</span> <span>R$ 20</span></li>
+                    </ul>
+                    <a href="#agendar" class="btn btn-light">Agendar</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section gallery" id="galeria">
+        <div class="container">
+            <div class="section-head">
+                <span class="kicker">INSPIRAÇÃO</span>
+                <h2 class="section-title">Nossos Trabalhos</h2>
+                <p class="section-lead">Um pouco do talento da nossa equipe e da transformação das nossas Divas.</p>
+            </div>
+            <div class="gallery-grid">
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1560869711-c8b8c16981f5?q=80&w=800&auto=format&fit=crop" alt="Cabelo loiro tratado"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1590073246056-381e8bb76328?q=80&w=400&auto=format&fit=crop" alt="Unhas vermelhas decoradas"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=400&auto=format&fit=crop" alt="Design de sobrancelha"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1629115753831-ed39070b7d22?q=80&w=800&auto=format&fit=crop" alt="Noiva com maquiagem e cabelo pronto"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section testimonials">
+        <div class="container">
+            <div class="section-head">
+                <span class="kicker">DEPOIMENTOS</span>
+                <h2 class="section-title">O que dizem nossas Divas</h2>
+            </div>
+            
+            <div class="testi-slider">
+                <div class="testi-slide active">
+                    <p class="testi-quote">"O atendimento é maravilhoso! Saio do salão me sentindo renovada e linda. A equipe do Divas é muito atenciosa e profissional."</p>
+                    <div class="testi-stars">★★★★★</div>
+                    <p class="testi-name">Ana Paula Silva</p>
+                    <p class="testi-role">Cliente há 2 anos</p>
+                </div>
+                
+                <div class="testi-slide">
+                    <p class="testi-quote">"Simplesmente amo fazer minhas unhas aqui. O design de sobrancelhas também é impecável. Recomendo muito a todos em Cachoeirinha."</p>
+                    <div class="testi-stars">★★★★★</div>
+                    <p class="testi-name">Camila Fernandes</p>
+                    <p class="testi-role">Cliente frequente</p>
+                </div>
+
+                <div class="testi-slide">
+                    <p class="testi-quote">"Fiz minhas luzes e hidratação no Divas e o resultado superou minhas expectativas. O cabelo ficou saudável e com uma cor linda. Atendimento de primeira!"</p>
+                    <div class="testi-stars">★★★★★</div>
+                    <p class="testi-name">Fernanda Costa</p>
+                    <p class="testi-role">Cliente nova</p>
+                </div>
+
+                <div class="testi-dots">
+                    <button class="dot active" data-testi="0"></button>
+                    <button class="dot" data-testi="1"></button>
+                    <button class="dot" data-testi="2"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section booking" id="agendar">
+        <div class="container">
+            <div class="booking-wrap">
+                <div class="booking-copy">
+                    <span class="kicker">AGENDAMENTO</span>
+                    <h2 class="section-title">Agende seu horário<br>agora mesmo!</h2>
+                    <p class="section-lead">É rápido e fácil. Escolha o melhor dia e horário, o serviço desejado e nos envie pelo WhatsApp. Nós confirmaremos sua solicitação.</p>
+                    <div style="margin-top: 40px; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 15px; display: inline-flex; align-items: center; gap: 15px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/124/124034.png" alt="WhatsApp" width="30">
+                        <span style="font-size: 20px; font-weight: 700;">(51) 99174-9541</span>
+                    </div>
+                </div>
+                <div class="booking-form">
+                    <div class="field">
+                        <label for="name">Seu Nome</label>
+                        <input type="text" id="name" placeholder="Maria Oliveira">
+                    </div>
+                    <div class="field">
+                        <label for="phone">Seu WhatsApp (com DDD)</label>
+                        <input type="tel" id="phone" placeholder="51 99999-9999">
+                    </div>
+                    <div class="field">
+                        <label for="service">Serviço Desejado</label>
+                        <select id="service">
+                            <option value="" disabled selected>Selecione um serviço</option>
+                            <option value="Corte Feminino">Corte Feminino</option>
+                            <option value="Escova">Escova</option>
+                            <option value="Manicure">Manicure</option>
+                            <option value="Pedicure">Pedicure</option>
+                            <option value="Manicure e Pedicure">Manicure e Pedicure</option>
+                            <option value="Sobrancelha">Design de Sobrancelha</option>
+                            <option value="Cílios">Extensão de Cílios</option>
+                            <option value="Outro">Outro (especificar na msg)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="date">Melhor Data e Horário (Sugestão)</label>
+                        <input type="text" id="date" placeholder="Ex: Sábado às 10h">
+                    </div>
+                    <button class="btn" id="bookBtn">Solicitar agendamento via WhatsApp</button>
+                    <p class="availability-help" style="text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px;">Aguarde a confirmação da nossa equipe pelo WhatsApp.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section location" id="local">
+        <div class="container">
+            <div class="section-head">
+                <span class="kicker">ONDE NOS ENCONTRAR</span>
+                <h2 class="section-title">Visite o DIVAS</h2>
+                <p class="section-lead">Estamos localizados em Moradas do Bosque, prontos para te atender.</p>
+            </div>
+            <div class="location-grid">
+                <div class="address-card">
+                    <h3>DIVAS — Salão de Beleza</h3>
+                    <p>
+                        <span>📍</span>
+                        <span><strong>Endereço:</strong><br>Rua Otto Espíndola, 470<br>Moradas do Bosque<br>Cachoeirinha - RS<br>CEP 94960-842</span>
+                    </p>
+                    <p>
+                        <span>🕒</span>
+                        <span><strong>Horário de Funcionamento:</strong><br>Segunda a Sexta: 09:00 - 19:00<br>Sábado: 09:00 - 18:00<br>Domingo: Fechado</span>
+                    </p>
+                    <a href="https://maps.app.goo.gl/Hk5FpZ9Vb5jWwM7G7" target="_blank" class="btn btn-light" style="margin-top: 20px; width: 100%;">Abrir rota no Google Maps ↗</a>
+                </div>
+                <iframe class="map" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3455.198524985462!2d-51.09264628488495!3d-29.99182808188133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x951970524803b015%3A0x9f7b51f2486d49ea!2sRua%20Otto%20Esp%C3%ADndola%2C%20470%20-%20Moradas%20do%20Bosque%2C%20Cachoeirinha%20-%20RS!5e0!3m2!1spt-BR!2sbr!4v1678912345678!5m2!1spt-BR!2sbr" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col footer-brand">
+                    <img src="https://i.ibb.co/VNg3K1Q/logo-divas.jpg" alt="Logo Divas Salão de Beleza">
+                    <span>DIVAS</span>
+                    <small>SALÃO DE BELEZA</small>
+                    <p style="margin-top: 20px; color: #9b83ad;">O seu momento de beleza e autoestima em Cachoeirinha/RS.</p>
+                </div>
+                <div class="footer-col footer-links">
+                    <h4>Links Rápidos</h4>
+                    <ul>
+                        <li><a href="#inicio">Início</a></li>
+                        <li><a href="#sobre">O Salão</a></li>
+                        <li><a href="#servicos">Serviços</a></li>
+                        <li><a href="#galeria">Galeria</a></li>
+                        <li><a href="#agendar">Agendamento</a></li>
+                        <li><a href="#local">Localização</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contato</h4>
+                    <ul>
+                        <li>📞 (51) 99174-9541</li>
+                        <li>📧 contato@divassalao.com.br</li>
+                        <li>📍 Rua Otto Espíndola, 470<br>Cachoeirinha - RS</li>
+                    </ul>
+                    <h4 style="margin-top: 30px;">Redes Sociais</h4>
+                    <div class="social-links">
+                        <a href="https://instagram.com/seu_instagram" aria-label="Instagram">📸</a>
+                        <a href="https://facebook.com/seu_facebook" aria-label="Facebook">👍</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 DIVAS Salão de Beleza. Todos os direitos reservados.</p>
+                <p style="margin-top: 10px; font-size: 11px;">Desenvolvido com carinho para o seu negócio.</p>
+            </div>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/5551991749541?text=Olá!%20Gostaria%20de%20agendar%20um%20horário%20no%20Divas." class="float-whats" target="_blank" aria-label="Agendar pelo WhatsApp">
+        📱
+    </a>
+
+    <script>
+        const WHATSAPP_NUMBER = "5551991749541";
+        const SALON_NAME = "DIVAS Salão de Beleza";
+        const OPENING_HOURS = {
+            seg_sex: [9, 19],
+            sab: [9, 18]
+        };
+
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        let currentSlide = 0;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+        }
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                showSlide(parseInt(e.target.dataset.slide));
+            });
+        });
+
+        function updateStatusBar() {
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getHours();
+            let isOpen = false;
+            let closingTime = 0;
+
+            if (day === 0) {
+                isOpen = false;
+            } else if (day === 6) {
+                if (hour >= OPENING_HOURS.sab[0] && hour < OPENING_HOURS.sab[1]) {
+                    isOpen = true;
+                    closingTime = OPENING_HOURS.sab[1];
+                }
+            } else {
+                if (hour >= OPENING_HOURS.seg_sex[0] && hour < OPENING_HOURS.seg_sex[1]) {
+                    isOpen = true;
+                    closingTime = OPENING_HOURS.seg_sex[1];
+                }
+            }
+
+            if (isOpen) {
+                statusBar.classList.add('status-open');
+                statusText.textContent = `✅ Estamos ABERTOS agora! (Até às ${closingTime}h)`;
+            } else {
+                statusBar.classList.add('status-closed');
+                statusText.textContent = "🔴 No momento estamos FECHADOS.";
+            }
+        }
+        updateStatusBar();
+
+        const testiSlides = document.querySelectorAll('.testi-slide');
+        const testiDots = document.querySelectorAll('.testi-dots .dot');
+        let currentTesti = 0;
+
+        function showTesti(n) {
+            testiSlides[currentTesti].classList.remove('active');
+            testiDots[currentTesti].classList.remove('active');
+            currentTesti = (n + testiSlides.length) % testiSlides.length;
+            testiSlides[currentTesti].classList.add('active');
+            testiDots[currentTesti].classList.add('active');
+        }
+
+        testiDots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                showTesti(parseInt(e.target.dataset.testi));
+            });
+        });
+
+        setInterval(() => showTesti(currentTesti + 1), 8000);
+
+        const menuBtn = document.getElementById('menuBtn');
+        const navlinks = document.getElementById('navlinks');
+
+        menuBtn.addEventListener('click', () => {
+            navlinks.classList.toggle('open');
+            menuBtn.textContent = navlinks.classList.contains('open') ? '✕' : '☰';
+        });
+
+        document.querySelectorAll('.navlinks a').forEach(link => {
+            link.addEventListener('click', () => {
+                navlinks.classList.remove('open');
+                menuBtn.textContent = '☰';
+            });
+        });
+
+        const bookBtn = document.getElementById('bookBtn');
+        
+        bookBtn.addEventListener('click', () => {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const service = document.getElementById('service').value;
+            const date = document.getElementById('date').value.trim();
+
+            if (!name || !phone || !service) {
+                alert("Por favor, preencha Nome, Telefone e selecione um Serviço.");
+                return;
+            }
+
+            const message = `Olá! Gostaria de solicitar um agendamento no ${SALON_NAME}.%0A%0A*Nome:* ${name}%0A*Telefone:* ${phone}%0A*Serviço:* ${service}%0A*Data/Horário Sugerido:* ${date}`;
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
