@@ -111,7 +111,7 @@
         .testi-role { color: var(--muted); font-size: 14px; }
         .testi-dots { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; }
 
-        /* Seção Agendamento com Agente de IA */
+        /* Seção Agendamento Automatizado com Agente de IA */
         .booking { background: linear-gradient(135deg, var(--deep) 0%, #8554B1 58%, var(--lilac) 100%); color: var(--white); }
         .booking-wrap { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: center; }
         .booking .section-title, .booking .kicker { color: var(--white); }
@@ -372,7 +372,7 @@
                             </div>
                             <div>
                                 <h3>Diva IA <span class="ai-tag">AGENTE</span></h3>
-                                <span>Online agora • Valores e Agendamentos</span>
+                                <span>Online agora • Agendamento Automático</span>
                             </div>
                         </div>
                         <button type="button" class="ai-restart" id="aiRestartBtn">Reiniciar ↻</button>
@@ -438,7 +438,7 @@
                     <h4>Contato</h4>
                     <ul>
                         <li>📞 (51) 99174-9541</li>
-                        <li>📧 contato@divassalao.com.br</li>
+                        <li>📧 Taisfamiliasantana@gmail.com</li>
                         <li>📍 Rua Otto Espíndola, 470<br>Cachoeirinha - RS</li>
                     </ul>
                     <h4 style="margin-top: 30px;">Redes Sociais</h4>
@@ -460,7 +460,7 @@
     </a>
 
     <script>
-        // Número do WhatsApp que recebe os agendamentos da IA (55 + DDD + número)
+        const SISTER_EMAIL = "Taisfamiliasantana@gmail.com";
         const WHATSAPP_NUMBER = "5551991749541";
         const SALON_NAME = "DIVAS Salão de Beleza";
         const OPENING_HOURS = {
@@ -578,7 +578,7 @@
             });
         });
 
-        // === AGENTE DE IA DE ATENDIMENTO E AGENDAMENTO ===
+        // === AGENTE DE IA DE ATENDIMENTO E AGENDAMENTO AUTOMÁTICO ===
         const aiChatBody = document.getElementById('aiChatBody');
         const aiChips = document.getElementById('aiChips');
         const aiChatForm = document.getElementById('aiChatForm');
@@ -817,7 +817,7 @@
                 aiState.name = text;
                 aiState.step = "PHONE";
                 aiRespond(
-                    `Obrigada, <strong>${aiState.name}</strong>! 📱 Por último, digite o seu <strong>WhatsApp (com DDD)</strong> para enviarmos o lembrete do seu horário:`,
+                    `Obrigada, <strong>${aiState.name}</strong>! 📱 Por último, digite o seu <strong>WhatsApp (com DDD)</strong> para concluirmos seu agendamento automaticamente:`,
                     []
                 );
                 return;
@@ -854,32 +854,79 @@
                     `*Valor:* ${aiState.price}\n` +
                     `*Dia:* ${aiState.date}\n` +
                     `*Horário:* ${aiState.time}\n\n` +
-                    `📲 *Toque no link abaixo para enviar o lembrete pronto para a cliente:*\n` +
-                    `${clientReminderUrl}`;
+                    `📲 *Link para enviar lembrete à cliente:*\n${clientReminderUrl}`;
 
-                const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(rawSisterMsg)}`;
+                const fallbackWaUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(rawSisterMsg)}`;
 
                 const calUrl = createGoogleCalLink(
                     `${aiState.service} — ${SALON_NAME}`,
                     `Cliente: ${aiState.name} | WhatsApp: ${aiState.phone} | Serviço: ${aiState.service} (${aiState.price}) | Preferência: ${aiState.date} às ${aiState.time}`
                 );
 
-                aiRespond(
-                    `Prontinho, <strong>${aiState.name}</strong>! 🎉 Confira o lembrete do seu horário:<br><br>` +
-                    `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
-                    `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
-                    `✨ <strong>Serviço:</strong> ${aiState.service}<br>` +
-                    `💰 <strong>Valor:</strong> ${aiState.price}<br>` +
-                    `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
-                    `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
-                    `Escolha abaixo para confirmar e receber o lembrete no seu WhatsApp:` +
-                    `<div class="confirm-links">` +
-                        `<a href="${waUrl}" target="_blank" class="btn-confirm-wa">📲 Enviar Agendamento para o Salão</a>` +
-                        `<a href="${clientReminderUrl}" target="_blank" class="btn-confirm-client">💜 Receber Lembrete no Meu WhatsApp</a>` +
-                        `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
-                    `</div>`,
-                    [{ label: "🔄 Novo agendamento", value: "Reiniciar" }]
-                );
+                const loader = document.createElement('div');
+                loader.className = "chat-bubble bubble-ai";
+                loader.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div> <small style="color:var(--muted);margin-left:6px;">Enviando agendamento automaticamente...</small>`;
+                aiChatBody.appendChild(loader);
+                aiChatBody.scrollTop = aiChatBody.scrollHeight;
+
+                fetch(`https://formsubmit.co/ajax/${SISTER_EMAIL}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        _subject: `✨ Novo Agendamento DIVAS: ${aiState.name} (${aiState.date} às ${aiState.time})`,
+                        _template: "table",
+                        _captcha: "false",
+                        Cliente: aiState.name,
+                        WhatsApp_da_Cliente: aiState.phone,
+                        Tipo_de_Servico: aiState.service,
+                        Valor_do_Servico: aiState.price,
+                        Dia_Escolhido: aiState.date,
+                        Horario: aiState.time,
+                        Enviar_Lembrete_WhatsApp_Cliente: clientReminderUrl
+                    })
+                })
+                .then(response => response.json())
+                .then(() => {
+                    loader.remove();
+                    addBubble(
+                        `✅ <strong>Agendamento enviado automaticamente!</strong><br><br>` +
+                        `Nossa equipe já recebeu os dados da sua reserva:<br>` +
+                        `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
+                        `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
+                        `✨ <strong>Serviço:</strong> ${aiState.service}<br>` +
+                        `💰 <strong>Valor:</strong> ${aiState.price}<br>` +
+                        `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
+                        `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
+                        `Se quiser guardar um lembrete no seu celular agora, escolha uma opção abaixo:` +
+                        `<div class="confirm-links">` +
+                            `<a href="${clientReminderUrl}" target="_blank" class="btn-confirm-client">💜 Receber Lembrete no Meu WhatsApp</a>` +
+                            `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
+                        `</div>`,
+                        "ai"
+                    );
+                    renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
+                })
+                .catch(() => {
+                    loader.remove();
+                    addBubble(
+                        `Prontinho, <strong>${aiState.name}</strong>! 🎉 Confira os dados do seu agendamento:<br><br>` +
+                        `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
+                        `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
+                        `✨ <strong>Serviço:</strong> ${aiState.service} (${aiState.price})<br>` +
+                        `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
+                        `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
+                        `Toque abaixo para confirmar:` +
+                        `<div class="confirm-links">` +
+                            `<a href="${fallbackWaUrl}" target="_blank" class="btn-confirm-wa">📲 Confirmar no WhatsApp</a>` +
+                            `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
+                        `</div>`,
+                        "ai"
+                    );
+                    renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
+                });
                 return;
             }
 
