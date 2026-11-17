@@ -111,7 +111,6 @@
         .testi-role { color: var(--muted); font-size: 14px; }
         .testi-dots { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; }
 
-        /* Seção Agendamento Automatizado com Agente de IA */
         .booking { background: linear-gradient(135deg, var(--deep) 0%, #8554B1 58%, var(--lilac) 100%); color: var(--white); }
         .booking-wrap { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: center; }
         .booking .section-title, .booking .kicker { color: var(--white); }
@@ -356,7 +355,7 @@
                 <div class="booking-copy">
                     <span class="kicker">ATENDIMENTO & AGENDAMENTO</span>
                     <h2 class="section-title">Converse com nossa<br>Assistente IA!</h2>
-                    <p class="section-lead">Pergunte sobre nossos serviços, valores e horários disponíveis ou faça seu agendamento automático diretamente no chat ao lado.</p>
+                    <p class="section-lead">Pergunte sobre nossos serviços, valores e horários livres em tempo real ou faça seu agendamento automático no chat ao lado.</p>
                     <div style="margin-top: 40px; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 15px; display: inline-flex; align-items: center; gap: 15px;">
                         <img src="https://cdn-icons-png.flaticon.com/512/124/124034.png" alt="WhatsApp" width="30">
                         <span style="font-size: 20px; font-weight: 700;">(51) 99174-9541</span>
@@ -372,7 +371,7 @@
                             </div>
                             <div>
                                 <h3>Diva IA <span class="ai-tag">AGENTE</span></h3>
-                                <span>Online agora • Agendamento Automático</span>
+                                <span>Online agora • Horários Livres em Tempo Real</span>
                             </div>
                         </div>
                         <button type="button" class="ai-restart" id="aiRestartBtn">Reiniciar ↻</button>
@@ -460,6 +459,8 @@
     </a>
 
     <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxI8yrSWFMWUECNchTbyetcERVREFy3M46PSBmRH8oqEWPaP1eY3Daz4j2xG5fr5pEKDg/exec";
+
         const SISTER_EMAIL = "Taisfamiliasantana@gmail.com";
         const WHATSAPP_NUMBER = "5551991749541";
         const SALON_NAME = "DIVAS Salão de Beleza";
@@ -467,6 +468,9 @@
             seg_sex: [9, 19],
             sab: [9, 18]
         };
+
+        const SALON_SLOTS_WEEKDAY = ["09:00", "10:00", "11:00", "13:30", "14:30", "15:30", "16:30", "17:30"];
+        const SALON_SLOTS_SATURDAY = ["09:00", "10:00", "11:00", "13:30", "14:30", "15:30", "16:30"];
 
         const CATALOG = {
             "Cabelo": [
@@ -578,7 +582,7 @@
             });
         });
 
-        // === AGENTE DE IA DE ATENDIMENTO E AGENDAMENTO AUTOMÁTICO ===
+        // === AGENTE DE IA COM VERIFICAÇÃO REAL DE HORÁRIOS LIVRES ===
         const aiChatBody = document.getElementById('aiChatBody');
         const aiChips = document.getElementById('aiChips');
         const aiChatForm = document.getElementById('aiChatForm');
@@ -586,14 +590,18 @@
         const aiRestartBtn = document.getElementById('aiRestartBtn');
 
         let aiState = {
-            step: "START", // START | SERVICE | DATE | TIME | NAME | PHONE | DONE
+            step: "START", // START | SERVICE | DATE | TIME | NAME | PHONE | EMAIL | DONE
             category: "",
             service: "",
             price: "",
             date: "",
             time: "",
             name: "",
-            phone: ""
+            phone: "",
+            email: "",
+            targetDateObj: null,
+            busySlots: [],
+            availableSlots: []
         };
 
         function addBubble(html, type = "ai") {
@@ -616,7 +624,7 @@
             });
         }
 
-        function aiRespond(html, chips = [], delay = 400) {
+        function aiRespond(html, chips = [], delay = 350) {
             const loader = document.createElement('div');
             loader.className = "chat-bubble bubble-ai";
             loader.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
@@ -630,11 +638,32 @@
             }, delay);
         }
 
+        function getUpcomingDateChips() {
+            const names = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+            const chips = [];
+            const now = new Date();
+            for (let i = 0; i <= 5; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+                if (d.getDay() === 0) continue; // Pula domingo
+                const dd = String(d.getDate()).padStart(2, "0");
+                const mm = String(d.getMonth() + 1).padStart(2, "0");
+                if (i === 0) chips.push({ label: `Hoje (${dd}/${mm})`, value: `Hoje (${dd}/${mm})` });
+                else if (i === 1) chips.push({ label: `Amanhã (${dd}/${mm})`, value: `Amanhã (${dd}/${mm})` });
+                else chips.push({ label: `${names[d.getDay()]} (${dd}/${mm})`, value: `${names[d.getDay()]} (${dd}/${mm})` });
+                if (chips.length >= 4) break;
+            }
+            return chips;
+        }
+
         function initAiAgent() {
             aiChatBody.innerHTML = "";
-            aiState = { step: "START", category: "", service: "", price: "", date: "", time: "", name: "", phone: "" };
+            aiState = {
+                step: "START", category: "", service: "", price: "",
+                date: "", time: "", name: "", phone: "", email: "",
+                targetDateObj: null, busySlots: [], availableSlots: []
+            };
             addBubble(
-                `Olá! 💜 Sou a <strong>Diva IA</strong>, assistente virtual do <strong>Taís Divas Salão de Beleza</strong>.<br><br>Posso te informar todos os nossos serviços e valores ou agendar seu horário agora mesmo. Como posso ajudar?`,
+                `Olá! 💜 Sou a <strong>Diva IA</strong>, assistente virtual do <strong>Taís Divas Salão de Beleza</strong>.<br><br>Posso te informar nossos serviços e valores ou consultar os horários livres na agenda agora mesmo. Como posso ajudar?`,
                 "ai"
             );
             renderChips([
@@ -713,13 +742,8 @@
                         aiState.price = item.price;
                         aiState.step = "DATE";
                         aiRespond(
-                            `Perfeito! <strong>${item.name}</strong> (${item.price}). ✨<br><br>Para qual <strong>dia</strong> você gostaria de marcar?`,
-                            [
-                                { label: "Hoje", value: "Hoje" },
-                                { label: "Amanhã", value: "Amanhã" },
-                                { label: "Sexta-feira", value: "Sexta-feira" },
-                                { label: "Sábado", value: "Sábado" }
-                            ]
+                            `Perfeito! <strong>${item.name}</strong> (${item.price}). ✨<br><br>Para qual <strong>dia</strong> você gostaria de ver os horários livres?`,
+                            getUpcomingDateChips()
                         );
                         return true;
                     }
@@ -728,19 +752,238 @@
             return false;
         }
 
-        function createGoogleCalLink(title, details) {
-            const tomorrow = new Date(Date.now() + 86400000);
-            const y = tomorrow.getFullYear();
-            const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-            const d = String(tomorrow.getDate()).padStart(2, '0');
+        function parseDateOnlyBR(dateStr) {
+            const now = new Date();
+            const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            const norm = (dateStr || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const dateMatch = norm.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+            if (dateMatch) {
+                const day = parseInt(dateMatch[1], 10);
+                const month = parseInt(dateMatch[2], 10) - 1;
+                let year = dateMatch[3] ? parseInt(dateMatch[3], 10) : now.getFullYear();
+                if (year < 100) year += 2000;
+                target.setFullYear(year, month, day);
+                return target;
+            }
+
+            if (norm.includes("amanha")) {
+                target.setDate(target.getDate() + 1);
+            } else if (!norm.includes("hoje")) {
+                const weekdays = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+                const foundDay = weekdays.findIndex(w => norm.includes(w));
+                if (foundDay !== -1) {
+                    let diff = (foundDay - target.getDay() + 7) % 7;
+                    if (diff === 0) diff = 7;
+                    target.setDate(target.getDate() + diff);
+                }
+            }
+            return target;
+        }
+
+        function buildDateTimeFromSlot(baseDate, timeStr) {
+            const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 10, 0, 0, 0);
+            const timeMatch = (timeStr || "").match(/(\d{1,2})(?:[:hH](\d{2}))?/);
+            if (timeMatch) {
+                const hours = parseInt(timeMatch[1], 10);
+                const mins = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+                start.setHours(hours, mins, 0, 0);
+            }
+            const end = new Date(start.getTime() + 60 * 60 * 1000);
+            return { start, end };
+        }
+
+        function isSlotBusy(start, end, busyList) {
+            const s = start.getTime();
+            const e = end.getTime();
+            return busyList.some(b => {
+                const bs = new Date(b.start).getTime();
+                const be = new Date(b.end).getTime();
+                return s < be && e > bs;
+            });
+        }
+
+        function checkRealAvailabilityForDate(dateText) {
+            const targetDate = parseDateOnlyBR(dateText);
+            if (targetDate.getDay() === 0) {
+                aiRespond(
+                    `Aos <strong>domingos</strong> o salão é fechado. 💜<br><br>Escolha outro dia de Segunda a Sábado:`,
+                    getUpcomingDateChips()
+                );
+                return;
+            }
+
+            aiState.date = dateText;
+            aiState.targetDateObj = targetDate;
+
+            const dayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+            const dayEnd = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+
+            const loader = document.createElement('div');
+            loader.className = "chat-bubble bubble-ai";
+            loader.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div> <small style="color:var(--muted);margin-left:6px;">Consultando horários livres na agenda...</small>`;
+            aiChatBody.appendChild(loader);
+            aiChatBody.scrollTop = aiChatBody.scrollHeight;
+
+            const url = `${GOOGLE_SCRIPT_URL}?startIso=${encodeURIComponent(dayStart.toISOString())}&endIso=${encodeURIComponent(dayEnd.toISOString())}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    loader.remove();
+                    const busyList = (data && Array.isArray(data.busy)) ? data.busy : [];
+                    aiState.busySlots = busyList;
+
+                    const baseSlots = targetDate.getDay() === 6 ? SALON_SLOTS_SATURDAY : SALON_SLOTS_WEEKDAY;
+                    const minAllowedTime = Date.now() + 20 * 60 * 1000;
+
+                    const freeSlots = baseSlots.filter(slotStr => {
+                        const { start, end } = buildDateTimeFromSlot(targetDate, slotStr);
+                        if (start.getTime() <= minAllowedTime) return false;
+                        return !isSlotBusy(start, end, busyList);
+                    });
+
+                    aiState.availableSlots = freeSlots;
+
+                    if (freeSlots.length === 0) {
+                        aiState.step = "DATE";
+                        addBubble(
+                            `Puxa, nossa agenda para <strong>${aiState.date}</strong> já está totalmente preenchida! 😕<br><br>Escolha outro dia para ver os horários disponíveis:`,
+                            "ai"
+                        );
+                        renderChips(getUpcomingDateChips());
+                        return;
+                    }
+
+                    aiState.step = "TIME";
+                    const busyCountNote = busyList.length > 0
+                        ? `<br><small style="color:var(--muted);">Mostrando apenas horários livres na agenda.</small>`
+                        : ``;
+
+                    addBubble(
+                        `Estes são os horários <strong>disponíveis</strong> para <strong>${aiState.date}</strong>:${busyCountNote}<br><br>Qual horário você prefere?`,
+                        "ai"
+                    );
+                    renderChips(freeSlots.map(s => ({ label: `🕒 ${s}`, value: s })));
+                })
+                .catch(() => {
+                    loader.remove();
+                    const baseSlots = targetDate.getDay() === 6 ? SALON_SLOTS_SATURDAY : SALON_SLOTS_WEEKDAY;
+                    aiState.busySlots = [];
+                    aiState.availableSlots = baseSlots;
+                    aiState.step = "TIME";
+                    addBubble(
+                        `Certo, para <strong>${aiState.date}</strong>! 🕒 Qual <strong>horário</strong> você prefere?`,
+                        "ai"
+                    );
+                    renderChips(baseSlots.map(s => ({ label: `🕒 ${s}`, value: s })));
+                });
+        }
+
+        function toGoogleCalDate(d) {
+            const pad = n => String(n).padStart(2, "0");
+            return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+        }
+
+        function createGoogleCalLink(title, details, start, end) {
             const params = new URLSearchParams({
                 action: "TEMPLATE",
                 text: title,
                 details: details,
                 location: "Rua Otto Espíndola, 470 - Moradas do Bosque, Cachoeirinha - RS",
-                dates: `${y}${m}${d}T100000/${y}${m}${d}T110000`
+                dates: `${toGoogleCalDate(start)}/${toGoogleCalDate(end)}`
             });
             return `https://calendar.google.com/calendar/render?${params.toString()}`;
+        }
+
+        function finalizeBooking() {
+            aiState.step = "DONE";
+
+            const digits = aiState.phone.replace(/\D/g, "");
+            const cleanClientDigits = digits.startsWith("55") ? digits : `55${digits}`;
+
+            const rawClientReminder =
+                `Olá, ${aiState.name}! 💜 Lembrando que você tem horário marcado no *${SALON_NAME}*:\n\n` +
+                `✨ *Serviço:* ${aiState.service}\n` +
+                `💰 *Valor:* ${aiState.price}\n` +
+                `📅 *Dia:* ${aiState.date}\n` +
+                `🕒 *Horário:* ${aiState.time}\n` +
+                `📍 *Endereço:* Rua Otto Espíndola, 470 - Moradas do Bosque, Cachoeirinha/RS\n\n` +
+                `Te esperamos! ✨`;
+
+            const clientReminderUrl = `https://wa.me/${cleanClientDigits}?text=${encodeURIComponent(rawClientReminder)}`;
+            const baseDate = aiState.targetDateObj || parseDateOnlyBR(aiState.date);
+            const { start, end } = buildDateTimeFromSlot(baseDate, aiState.time);
+
+            const calUrl = createGoogleCalLink(
+                `${aiState.service} — ${SALON_NAME}`,
+                `Cliente: ${aiState.name} | WhatsApp: ${aiState.phone} | Serviço: ${aiState.service} (${aiState.price}) | Dia: ${aiState.date} às ${aiState.time}`,
+                start,
+                end
+            );
+
+            const loader = document.createElement('div');
+            loader.className = "chat-bubble bubble-ai";
+            loader.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div> <small style="color:var(--muted);margin-left:6px;">Reservando horário na agenda e enviando confirmação...</small>`;
+            aiChatBody.appendChild(loader);
+            aiChatBody.scrollTop = aiChatBody.scrollHeight;
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    name: aiState.name,
+                    phone: aiState.phone,
+                    email: aiState.email,
+                    service: aiState.service,
+                    price: aiState.price,
+                    date: aiState.date,
+                    time: aiState.time,
+                    startIso: start.toISOString(),
+                    endIso: end.toISOString(),
+                    clientReminderUrl: clientReminderUrl
+                })
+            })
+            .then(() => {
+                loader.remove();
+                const emailNote = aiState.email
+                    ? `📧 Enviamos a confirmação e o convite da <strong>Google Agenda</strong> para <strong>${aiState.email}</strong>.<br><br>`
+                    : ``;
+
+                addBubble(
+                    `✅ <strong>Horário reservado automaticamente!</strong><br><br>` +
+                    `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
+                    `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
+                    (aiState.email ? `📧 <strong>E-mail:</strong> ${aiState.email}<br>` : ``) +
+                    `✨ <strong>Serviço:</strong> ${aiState.service}<br>` +
+                    `💰 <strong>Valor:</strong> ${aiState.price}<br>` +
+                    `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
+                    `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
+                    emailNote +
+                    `Você também pode guardar o lembrete no seu WhatsApp ou Google Agenda:` +
+                    `<div class="confirm-links">` +
+                        `<a href="${clientReminderUrl}" target="_blank" class="btn-confirm-client">💜 Receber Lembrete no Meu WhatsApp</a>` +
+                        `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Abrir no Google Agenda</a>` +
+                    `</div>`,
+                    "ai"
+                );
+                renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
+            })
+            .catch(() => {
+                loader.remove();
+                addBubble(
+                    `✅ <strong>Dados registrados!</strong><br><br>` +
+                    `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
+                    `✨ <strong>Serviço:</strong> ${aiState.service} (${aiState.price})<br>` +
+                    `📅 <strong>Dia:</strong> ${aiState.date} às ${aiState.time}<br><br>` +
+                    `<div class="confirm-links">` +
+                        `<a href="${clientReminderUrl}" target="_blank" class="btn-confirm-client">💜 Receber Lembrete no Meu WhatsApp</a>` +
+                        `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
+                    `</div>`,
+                    "ai"
+                );
+                renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
+            });
         }
 
         function processUserMessage(raw) {
@@ -751,7 +994,7 @@
             aiChatInput.value = "";
             const lower = text.toLowerCase();
 
-            if (aiState.step !== "NAME" && aiState.step !== "PHONE") {
+            if (aiState.step !== "NAME" && aiState.step !== "PHONE" && aiState.step !== "EMAIL") {
                 if (lower === "cabelo" || lower.includes("agendar cabelo")) { chooseCategory("Cabelo"); return; }
                 if (lower === "unhas" || lower.includes("agendar unha")) { chooseCategory("Unhas"); return; }
                 if (lower === "olhos e face" || lower.includes("sobrancelha") || lower.includes("cilios")) { chooseCategory("Olhos e Face"); return; }
@@ -779,37 +1022,33 @@
                 aiState.step = "DATE";
 
                 aiRespond(
-                    `Anotado: <strong>${aiState.service}</strong> (${aiState.price}). ✨<br><br>Qual <strong>dia</strong> fica melhor para você?`,
-                    [
-                        { label: "Hoje", value: "Hoje" },
-                        { label: "Amanhã", value: "Amanhã" },
-                        { label: "Sexta-feira", value: "Sexta-feira" },
-                        { label: "Sábado", value: "Sábado" }
-                    ]
+                    `Anotado: <strong>${aiState.service}</strong> (${aiState.price}). ✨<br><br>Para qual <strong>dia</strong> você gostaria de consultar os horários livres?`,
+                    getUpcomingDateChips()
                 );
                 return;
             }
 
             if (aiState.step === "DATE") {
-                aiState.date = text;
-                aiState.step = "TIME";
-                aiRespond(
-                    `Certo, para <strong>${aiState.date}</strong>! 🕒 Qual <strong>horário</strong> você prefere?`,
-                    [
-                        { label: "09:30", value: "09:30" },
-                        { label: "11:00", value: "11:00" },
-                        { label: "14:00", value: "14:00" },
-                        { label: "15:30", value: "15:30" },
-                        { label: "17:00", value: "17:00" }
-                    ]
-                );
+                checkRealAvailabilityForDate(text);
                 return;
             }
 
             if (aiState.step === "TIME") {
-                aiState.time = text;
+                const cleanTime = text.replace(/[^\d:hH]/g, "");
+                const baseDate = aiState.targetDateObj || parseDateOnlyBR(aiState.date);
+                const { start, end } = buildDateTimeFromSlot(baseDate, cleanTime || text);
+
+                if (aiState.busySlots.length > 0 && isSlotBusy(start, end, aiState.busySlots)) {
+                    aiRespond(
+                        `Esse horário (<strong>${text}</strong>) já está reservado para outra cliente! 😕<br><br>Escolha um dos horários livres abaixo:`,
+                        aiState.availableSlots.map(s => ({ label: `🕒 ${s}`, value: s }))
+                    );
+                    return;
+                }
+
+                aiState.time = cleanTime || text;
                 aiState.step = "NAME";
-                aiRespond(`Perfeito! Agora digite o seu <strong>nome</strong>:`, []);
+                aiRespond(`Perfeito! Horário <strong>${aiState.time}</strong> livre. Agora digite o seu <strong>nome</strong>:`, []);
                 return;
             }
 
@@ -817,7 +1056,7 @@
                 aiState.name = text;
                 aiState.step = "PHONE";
                 aiRespond(
-                    `Obrigada, <strong>${aiState.name}</strong>! 📱 Por último, digite o seu <strong>WhatsApp (com DDD)</strong> para concluirmos seu agendamento automaticamente:`,
+                    `Obrigada, <strong>${aiState.name}</strong>! 📱 Digite o seu <strong>WhatsApp (com DDD)</strong>:`,
                     []
                 );
                 return;
@@ -829,104 +1068,25 @@
                     aiRespond(`Por favor, digite um número de WhatsApp válido com DDD (ex: <strong>51 99999-9999</strong>):`, []);
                     return;
                 }
-
                 aiState.phone = text;
-                aiState.step = "DONE";
-
-                const cleanClientDigits = digits.startsWith("55") ? digits : `55${digits}`;
-
-                const rawClientReminder =
-                    `Olá, ${aiState.name}! 💜 Lembrando que você tem horário marcado no *${SALON_NAME}*:\n\n` +
-                    `✨ *Serviço:* ${aiState.service}\n` +
-                    `💰 *Valor:* ${aiState.price}\n` +
-                    `📅 *Dia:* ${aiState.date}\n` +
-                    `🕒 *Horário:* ${aiState.time}\n` +
-                    `📍 *Endereço:* Rua Otto Espíndola, 470 - Moradas do Bosque, Cachoeirinha/RS\n\n` +
-                    `Te esperamos! ✨`;
-
-                const clientReminderUrl = `https://wa.me/${cleanClientDigits}?text=${encodeURIComponent(rawClientReminder)}`;
-
-                const rawSisterMsg =
-                    `Olá! Novo agendamento feito pela *Diva IA* no site:\n\n` +
-                    `*Cliente:* ${aiState.name}\n` +
-                    `*WhatsApp da Cliente:* ${aiState.phone}\n` +
-                    `*Serviço:* ${aiState.service}\n` +
-                    `*Valor:* ${aiState.price}\n` +
-                    `*Dia:* ${aiState.date}\n` +
-                    `*Horário:* ${aiState.time}\n\n` +
-                    `📲 *Link para enviar lembrete à cliente:*\n${clientReminderUrl}`;
-
-                const fallbackWaUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(rawSisterMsg)}`;
-
-                const calUrl = createGoogleCalLink(
-                    `${aiState.service} — ${SALON_NAME}`,
-                    `Cliente: ${aiState.name} | WhatsApp: ${aiState.phone} | Serviço: ${aiState.service} (${aiState.price}) | Preferência: ${aiState.date} às ${aiState.time}`
+                aiState.step = "EMAIL";
+                aiRespond(
+                    `Por último, digite o seu <strong>e-mail</strong> para receber a confirmação e o convite direto na sua <strong>Google Agenda</strong> (ou toque em Pular):`,
+                    [{ label: "⏭️ Pular e-mail", value: "Pular" }]
                 );
+                return;
+            }
 
-                const loader = document.createElement('div');
-                loader.className = "chat-bubble bubble-ai";
-                loader.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div> <small style="color:var(--muted);margin-left:6px;">Enviando agendamento automaticamente...</small>`;
-                aiChatBody.appendChild(loader);
-                aiChatBody.scrollTop = aiChatBody.scrollHeight;
-
-                fetch(`https://formsubmit.co/ajax/${SISTER_EMAIL}`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({
-                        _subject: `✨ Novo Agendamento DIVAS: ${aiState.name} (${aiState.date} às ${aiState.time})`,
-                        _template: "table",
-                        _captcha: "false",
-                        Cliente: aiState.name,
-                        WhatsApp_da_Cliente: aiState.phone,
-                        Tipo_de_Servico: aiState.service,
-                        Valor_do_Servico: aiState.price,
-                        Dia_Escolhido: aiState.date,
-                        Horario: aiState.time,
-                        Enviar_Lembrete_WhatsApp_Cliente: clientReminderUrl
-                    })
-                })
-                .then(response => response.json())
-                .then(() => {
-                    loader.remove();
-                    addBubble(
-                        `✅ <strong>Agendamento enviado automaticamente!</strong><br><br>` +
-                        `Nossa equipe já recebeu os dados da sua reserva:<br>` +
-                        `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
-                        `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
-                        `✨ <strong>Serviço:</strong> ${aiState.service}<br>` +
-                        `💰 <strong>Valor:</strong> ${aiState.price}<br>` +
-                        `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
-                        `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
-                        `Se quiser guardar um lembrete no seu celular agora, escolha uma opção abaixo:` +
-                        `<div class="confirm-links">` +
-                            `<a href="${clientReminderUrl}" target="_blank" class="btn-confirm-client">💜 Receber Lembrete no Meu WhatsApp</a>` +
-                            `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
-                        `</div>`,
-                        "ai"
-                    );
-                    renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
-                })
-                .catch(() => {
-                    loader.remove();
-                    addBubble(
-                        `Prontinho, <strong>${aiState.name}</strong>! 🎉 Confira os dados do seu agendamento:<br><br>` +
-                        `👤 <strong>Cliente:</strong> ${aiState.name}<br>` +
-                        `📱 <strong>WhatsApp:</strong> ${aiState.phone}<br>` +
-                        `✨ <strong>Serviço:</strong> ${aiState.service} (${aiState.price})<br>` +
-                        `📅 <strong>Dia:</strong> ${aiState.date}<br>` +
-                        `🕒 <strong>Horário:</strong> ${aiState.time}<br><br>` +
-                        `Toque abaixo para confirmar:` +
-                        `<div class="confirm-links">` +
-                            `<a href="${fallbackWaUrl}" target="_blank" class="btn-confirm-wa">📲 Confirmar no WhatsApp</a>` +
-                            `<a href="${calUrl}" target="_blank" class="btn-confirm-cal">📅 Salvar no Google Agenda</a>` +
-                        `</div>`,
-                        "ai"
-                    );
-                    renderChips([{ label: "🔄 Novo agendamento", value: "Reiniciar" }]);
-                });
+            if (aiState.step === "EMAIL") {
+                if (lower === "pular" || lower.includes("nao tenho") || lower.includes("não tenho")) {
+                    aiState.email = "";
+                } else if (!text.includes("@") || !text.includes(".")) {
+                    aiRespond(`Digite um e-mail válido (ex: <strong>nome@gmail.com</strong>) ou toque em <strong>Pular e-mail</strong>:`, [{ label: "⏭️ Pular e-mail", value: "Pular" }]);
+                    return;
+                } else {
+                    aiState.email = text;
+                }
+                finalizeBooking();
                 return;
             }
 
